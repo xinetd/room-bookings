@@ -22,7 +22,7 @@ public class RoomBookingsTest {
     }
 
     @Test
-    public void testAvailableRoomsWithSingleBooking() throws InterruptedException {
+    public void testAvailableRoomsWithSingleBooking() {
         LocalDate date1 = LocalDate.of(2022, 6, 1);
         roomBookings.makeBooking(date1, 1, "Smith");
 
@@ -31,7 +31,7 @@ public class RoomBookingsTest {
     }
 
     @Test
-    public void testAvailableRoomsWithManyBookings() throws InterruptedException {
+    public void testAvailableRoomsWithManyBookings() {
         LocalDate date1 = LocalDate.of(2022, 6, 1);
         roomBookings.makeBooking(date1, 1, "Smith");
 
@@ -94,7 +94,7 @@ public class RoomBookingsTest {
     }
 
     @Test
-    public void testGuestBookings() throws InterruptedException {
+    public void testGuestBookings() {
         LocalDate date1 = LocalDate.of(2022, 6, 1);
         String guestName = "Smithson";
         roomBookings.makeBooking(date1, 1, guestName);
@@ -104,7 +104,7 @@ public class RoomBookingsTest {
     }
 
     @Test
-    public void testBookingError() throws InterruptedException {
+    public void testBookingError() {
         Throwable exception = assertThrows(RoomBookings.RoomBookingException.class, () -> {
             LocalDate date1 = LocalDate.of(2022, 6, 1);
             roomBookings.makeBooking(date1, 1, "Smith");

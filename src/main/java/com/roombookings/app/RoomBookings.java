@@ -6,8 +6,6 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -16,13 +14,11 @@ public class RoomBookings {
     private int maxRooms;
     private ConcurrentHashMap<LocalDate, Set<Booking>> roomBookingsByDate;
     private ConcurrentHashMap<String, Set<LocalDate>> roomBookingsByGuest;
-    private ReentrantLock lock;
 
     RoomBookings(int maxRooms) {
         this.maxRooms = maxRooms;
         roomBookingsByDate = new ConcurrentHashMap<>();
         roomBookingsByGuest = new ConcurrentHashMap<>();
-        lock = new ReentrantLock();
     }
 
     private <T> Iterable<T> emptyIfNull(Iterable<T> iterable) {
@@ -34,7 +30,8 @@ public class RoomBookings {
     }
 
     private Set<Integer> setOfBookedRooms(LocalDate date) {
-        Set<Integer> rooms = new HashSet<Integer>();
+        Set<Integer> rooms = ConcurrentHashMap.newKeySet();
+
         Set<Booking> bookings = roomBookingsByDate.get(date);
         for (Booking booking : emptyIfNull(bookings)) {
             rooms.add(booking.roomNumber);
@@ -72,37 +69,35 @@ public class RoomBookings {
         }
     }
 
-    public void makeBooking(LocalDate date, Integer roomNumber, String guestName) throws RoomBookingException, InterruptedException {
+    public void makeBooking(LocalDate date, Integer roomNumber, String guestName) throws RoomBookingException {
 
-        boolean isLockAcquired = lock.tryLock(1, TimeUnit.SECONDS);
+        Booking booking = new Booking(date, roomNumber, guestName);
 
-        if(isLockAcquired) {
-            try {
-                Booking booking = new Booking(date, roomNumber, guestName);
-
-                if(roomBookingsByDate.containsKey(date)) {
-                   if (!roomBookingsByDate.get(date).add(booking))
-                       throw new RoomBookingException("Room booking error", null);
-                }
-                else {
-                    HashSet<Booking> roomsByDate = new HashSet<>();
-                    roomsByDate.add(booking);
-                    roomBookingsByDate.put(date, roomsByDate);
-                }
-
-                if(roomBookingsByGuest.containsKey(guestName)) {
-                    roomBookingsByGuest.get(guestName).add(date);
-                }
-                else {
-                    HashSet<LocalDate> roomsByGuest = new HashSet<>();
-                    roomsByGuest.add(date);
-                    roomBookingsByGuest.put(guestName, roomsByGuest);
-                }
-            } finally {
-                lock.unlock();
+        roomBookingsByDate.compute(date, (key, value) -> {
+            if(value == null) {
+                Set<Booking> roomsByDate = ConcurrentHashMap.newKeySet();
+                roomsByDate.add(booking);
+                return roomsByDate;
             }
-        }
+            else {
+                if (!value.add(booking)) {
+                    throw new RoomBookingException("Room booking error", null);
+                }
+                return value;
+            }
+        });
 
+       roomBookingsByGuest.compute(guestName, (key, value) -> {
+            if(value == null) {
+                Set<LocalDate> roomsByGuest = ConcurrentHashMap.newKeySet();
+                roomsByGuest.add(date);
+                return roomsByGuest;
+            }
+            else {
+                value.add(date);
+                return value;
+            }
+        });
     }
 
     public Set<Integer> getAvailableRooms(LocalDate date) {
