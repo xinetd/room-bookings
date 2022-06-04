@@ -112,7 +112,7 @@ public class RoomBookings {
     }
 
     public Set<Booking> getGuestBookings(String guestName) {
-        Set<Booking> bookings = new HashSet<>();
+        Set<Booking> bookings = ConcurrentHashMap.newKeySet();
 
         Set<LocalDate> dates = roomBookingsByGuest.get(guestName);
         for(LocalDate date : dates) {
