@@ -73,30 +73,22 @@ public class RoomBookings {
 
         Booking booking = new Booking(date, roomNumber, guestName);
 
-        roomBookingsByDate.compute(date, (key, value) -> {
-            if(value == null) {
-                Set<Booking> roomsByDate = ConcurrentHashMap.newKeySet();
-                roomsByDate.add(booking);
-                return roomsByDate;
+        roomBookingsByDate.compute(date, (k, v) -> {
+            if(v == null) {
+                v = ConcurrentHashMap.newKeySet();
             }
-            else {
-                if (!value.add(booking)) {
-                    throw new RoomBookingException("Room booking error", null);
-                }
-                return value;
+            if (!v.add(booking)) {
+                throw new RoomBookingException("Room booking error", null);
             }
+            return v;
         });
 
-       roomBookingsByGuest.compute(guestName, (key, value) -> {
-            if(value == null) {
-                Set<LocalDate> roomsByGuest = ConcurrentHashMap.newKeySet();
-                roomsByGuest.add(date);
-                return roomsByGuest;
+       roomBookingsByGuest.compute(guestName, (k, v) -> {
+            if(v == null) {
+                v = ConcurrentHashMap.newKeySet();
             }
-            else {
-                value.add(date);
-                return value;
-            }
+            v.add(date);
+            return v;
         });
     }
 
@@ -112,7 +104,7 @@ public class RoomBookings {
     }
 
     public Set<Booking> getGuestBookings(String guestName) {
-        Set<Booking> bookings = new HashSet<>();
+        Set<Booking> bookings = ConcurrentHashMap.newKeySet();
 
         Set<LocalDate> dates = roomBookingsByGuest.get(guestName);
         for(LocalDate date : dates) {
