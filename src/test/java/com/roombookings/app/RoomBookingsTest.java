@@ -45,7 +45,7 @@ public class RoomBookingsTest {
     }
 
     @Test
-    public void testAvailableRoomsWithMTGivenDistinctDay() throws InterruptedException {
+    public void testAvailableRoomsWithMTGivenDistinctDay() {
         IntStream.range(0,10).parallel().forEach(x -> {
             LocalDate date = LocalDate.of(2022, 6, x+1);
             roomBookings.makeBooking(date, x, "Smith" + x);
@@ -60,7 +60,7 @@ public class RoomBookingsTest {
     }
 
     @Test
-    public void testAvailableRoomsWithMTGivenAllBookedSameDay() throws InterruptedException {
+    public void testAvailableRoomsWithMTGivenAllBookedSameDay() {
         LocalDate date = LocalDate.of(2022, 6, 1);
 
         IntStream.range(0,10).parallel().forEach(x -> {
