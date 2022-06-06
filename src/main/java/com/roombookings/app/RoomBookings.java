@@ -26,7 +26,7 @@ public class RoomBookings {
     }
 
     private Set<Integer> setOfMaxRooms() {
-        return new HashSet<>(IntStream.rangeClosed(1, maxRooms).boxed().toList());
+        return new HashSet<>(IntStream.rangeClosed(0, maxRooms-1).boxed().toList());
     }
 
     private Set<Integer> setOfBookedRooms(LocalDate date) {

@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -44,52 +45,30 @@ public class RoomBookingsTest {
     }
 
     @Test
-    public void testAvailableRoomsWithMTBookings() throws InterruptedException {
-        class RoomBookTask implements Runnable {
+    public void testAvailableRoomsWithMTGivenDistinctDay() throws InterruptedException {
+        IntStream.range(0,10).parallel().forEach(x -> {
+            LocalDate date = LocalDate.of(2022, 6, x+1);
+            roomBookings.makeBooking(date, x, "Smith" + x);
+        });
 
-            private RoomBookings roomBookings;
-            private String name;
+        IntStream.range(0,10).parallel().forEach(x -> {
+            LocalDate date = LocalDate.of(2022, 6, x+1);
+            Set<Integer> availableRooms = roomBookings.getAvailableRooms(date);
+            assertEquals(9, availableRooms.size());
+        });
 
-            public RoomBookTask(RoomBookings roomBookings, String name) {
-                this.roomBookings = roomBookings;
-                this.name = name;
-            }
+    }
 
-            int getRandomNumber(int min, int max) {
-                return (int) ((Math.random() * (max - min)) + min);
-            }
+    @Test
+    public void testAvailableRoomsWithMTGivenAllBookedSameDay() throws InterruptedException {
+        LocalDate date = LocalDate.of(2022, 6, 1);
 
-            @Override
-            public void run() {
-                for (int i = 1; i < 3; i++) {
-                    try {
-                        Thread.sleep((long)(Math.random() * 1000));
-                        LocalDate date1 = LocalDate.of(2022, 6, i);
-                        roomBookings.makeBooking(date1, i, "Smith#" + i);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    } catch (RoomBookings.RoomBookingException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }
+        IntStream.range(0,10).parallel().forEach(x -> {
+            roomBookings.makeBooking(date, x, "Smith" + x);
+        });
 
-        ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(2);
-
-        for (int i = 1; i < 3; i++) {
-            RoomBookTask task = new RoomBookTask(roomBookings, "Task" + i);
-            executor.execute(task);
-        }
-        executor.awaitTermination(2, TimeUnit.SECONDS);
-
-        LocalDate date1 = LocalDate.of(2022, 6, 1);
-        Set<Integer> availableRoomsDate1 = roomBookings.getAvailableRooms(date1);
-        assertEquals(9, availableRoomsDate1.size());
-
-        LocalDate date2 = LocalDate.of(2022, 6, 2);
-        Set<Integer> availableRoomsDate2 = roomBookings.getAvailableRooms(date2);
-        assertEquals(9, availableRoomsDate2.size());
+        Set<Integer> availableRooms = roomBookings.getAvailableRooms(date);
+        assertEquals(0, availableRooms.size());
 
     }
 
